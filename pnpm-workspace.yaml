@@ -1,0 +1,8 @@
+packages:
+  - apps/*
+  - mocks
+  - packages/*
+allowBuilds:
+  esbuild: true
+minimumReleaseAgeExclude:
+  - '@tanstack/react-query@5.108.1'

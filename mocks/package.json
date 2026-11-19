@@ -1,0 +1,21 @@
+{
+  "name": "@callosum/mocks",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "gateway": "tsx watch src/gateway.ts",
+    "metering": "tsx watch src/metering.ts",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "fastify": "^5.12.8",
+    "ulid": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.23.15",
+    "vitest": "^5.1.1"
+  }
+}

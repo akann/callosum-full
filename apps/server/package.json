@@ -1,0 +1,27 @@
+{
+  "name": "@callosum/server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "api": "tsx watch src/api.ts",
+    "worker": "tsx watch src/worker.ts",
+    "migrate": "tsx src/db/migrate.ts",
+    "seed": "tsx src/db/seed.ts",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@callosum/shared": "workspace:*",
+    "@fastify/cookie": "^11.1.5",
+    "fastify": "^5.12.8",
+    "postgres": "^4.1.1",
+    "ulid": "^3.0.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@callosum/mocks": "workspace:*",
+    "@types/node": "^24.0.0",
+    "tsx": "^4.23.15",
+    "vitest": "^5.1.1"
+  }
+}

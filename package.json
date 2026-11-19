@@ -1,0 +1,30 @@
+{
+  "name": "callosum-keys",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.18.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "db:up": "docker compose up -d --wait postgres",
+    "db:down": "docker compose down",
+    "db:migrate": "pnpm --filter @callosum/server migrate",
+    "db:seed": "pnpm --filter @callosum/server seed",
+    "db:reset": "docker compose down -v && pnpm db:up && pnpm db:migrate && pnpm db:seed",
+    "dev": "pnpm db:up && pnpm db:migrate && concurrently -k -n gateway,metering,api,worker,web -c blue,magenta,green,yellow,cyan \"pnpm --filter @callosum/mocks gateway\" \"pnpm --filter @callosum/mocks metering\" \"pnpm --filter @callosum/server api\" \"pnpm --filter @callosum/server worker\" \"pnpm --filter @callosum/web dev\"",
+    "mocks": "concurrently -k -n gateway,metering \"pnpm --filter @callosum/mocks gateway\" \"pnpm --filter @callosum/mocks metering\"",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "test": "pnpm -r test",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "@playwright/test": "1.65.1",
+    "concurrently": "^10.0.7",
+    "eslint": "^10.15.0",
+    "typescript": "~5.9.0",
+    "typescript-eslint": "^8.73.0"
+  }
+}

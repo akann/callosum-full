@@ -1,0 +1,19 @@
+name: callosum-keys-full
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: callosum
+      POSTGRES_PASSWORD: callosum
+      POSTGRES_DB: callosum
+    ports:
+      - "54330:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U callosum -d callosum"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+volumes:
+  pgdata:
