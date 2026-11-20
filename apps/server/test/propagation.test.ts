@@ -124,6 +124,28 @@ describe('revoke', () => {
   });
 });
 
+describe('uncertainty', () => {
+  it('does not forget a timed-out send just because the retry got a clean 503', async () => {
+    h.metering.config.hangRate = 1; // first POST applies, then hangs
+    const { key } = await h.createKey('timeout then 503');
+    const metering = async () => (await h.getKey(key.key_id)).systems.find((s) => s.system === 'metering')!;
+    await waitFor(async () => (await metering()).last_error?.startsWith('timeout'), 10_000, 'a metering timeout');
+    Object.assign(h.metering.config, { hangRate: 0, outage: true });
+    await waitFor(async () => (await metering()).last_error?.startsWith('503'), 10_000, 'a metering 503');
+
+    await h.revoke(key.key_id);
+    // The create may have landed, so it must not be cancelled as "never sent".
+    const [create] = await h.sql<{ state: string; outcome_uncertain: boolean }[]>`
+      SELECT state, outcome_uncertain FROM propagation_tasks
+      WHERE key_id = ${key.key_id} AND system = 'metering' AND action = 'create'`;
+    expect(create).toEqual({ state: 'queued', outcome_uncertain: true });
+
+    h.metering.config.outage = false;
+    await h.waitForStatus(key.key_id, 'revoked', 15_000);
+    expect(h.metering.meters.has(key.key_id)).toBe(false);
+  });
+});
+
 describe('resilience', () => {
   it('loses nothing across an outage of both downstreams', async () => {
     const existing = await Promise.all(Array.from({ length: 5 }, (_, i) => h.createKey(`pre-outage ${i}`)));

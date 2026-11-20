@@ -55,6 +55,8 @@ interface ClaimedTask {
   attempts: number;
   idempotency_key: string;
   operation_id: string | null;
+  /** True when an earlier send of this task already had an unknown outcome (timeout, or a worker that died). */
+  prior_uncertain: boolean;
 }
 
 const SYSTEMS: SystemName[] = ['gateway', 'metering'];
@@ -154,7 +156,7 @@ export class PropagationWorker {
     const sql = this.sql;
     const tasks = await sql<(ClaimedTask & { was_queued: boolean })[]>`
       WITH picked AS (
-        SELECT t.id, t.state AS prior_state
+        SELECT t.id, t.state AS prior_state, t.outcome_uncertain AS prior_uncertain
         FROM propagation_tasks t
         WHERE t.system = ${system}
           AND t.state IN ('queued', 'submitted')
@@ -176,7 +178,7 @@ export class PropagationWorker {
       FROM picked
       WHERE t.id = picked.id
       RETURNING t.id::int AS id, t.key_id, t.system, t.action, t.state, t.attempts,
-                t.idempotency_key, t.operation_id, (picked.prior_state = 'queued') AS was_queued`;
+                t.idempotency_key, t.operation_id, picked.prior_uncertain, (picked.prior_state = 'queued') AS was_queued`;
 
     // Show "attempt N" on the page. Done after the claim commits so the claim never holds task
     // locks while waiting for a key lock (writers always lock the key first).
@@ -269,9 +271,11 @@ export class PropagationWorker {
         this.opts.log('retrying', { task: task.id, system: task.system, action: task.action, attempt: task.attempts, error: outcome.error });
         await sql.begin(async (tx) => {
           await lockKey(tx, task.key_id);
+          // A clean 503 proves only that this send had no effect. If an earlier send of the same
+          // task timed out, that one may still have landed, so the task stays uncertain.
           await tx`
             UPDATE propagation_tasks
-            SET last_error = ${outcome.error}, outcome_uncertain = ${!outcome.certain},
+            SET last_error = ${outcome.error}, outcome_uncertain = ${!outcome.certain || task.prior_uncertain},
                 next_run_at = ${inMs(tx, delay)}, locked_until = NULL
             WHERE id = ${task.id} AND state = 'queued'`;
           await touchKey(tx, task.key_id);

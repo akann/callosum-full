@@ -1,6 +1,8 @@
 # Design: API key management with live propagation
 
-The one diagram to present is [diagram.svg](diagram.svg). This document is the reasoning behind it and the answers to the follow-up questions it invites.
+The one diagram to present is below ([diagram.svg](diagram.svg)). This document is the reasoning behind it and the answers to the follow-up questions it invites.
+
+![Design diagram: components, propagation flow and key state machine](diagram.svg)
 
 ## The problem in one paragraph
 
